@@ -9,10 +9,12 @@ const Header = () =>
 return (
 <AppBar position="relative">
     <Toolbar>
+        <a href="/" style={{color: "#FFFFFF"}}>
         <ShoppingBagIcon sx={{ mr: 2 }} />
-            <Typography variant="h6" color="inherit" noWrap>
-                Shop
-            </Typography>
+        </a>
+        <Typography variant="h6" color="inherit" noWrap>
+            Shop
+        </Typography>
     </Toolbar>
 </AppBar>
 )
