@@ -126,6 +126,8 @@ def signup():
             duplicateEmail = False
             #have to iterate through result instead of cursor
             for (stored_username, stored_email) in result:
+                print(stored_username)
+                print(stored_email)
                 if stored_username == username:
                     duplicateUsername = True
                 if stored_email == email:
@@ -153,7 +155,6 @@ def signup():
 
             cursor.execute(add_user, values)
             connection.commit()
-
             return "", statusCode
     else:
         return "", statusCode
@@ -163,7 +164,7 @@ def login():
     json = request.get_json()
     username = json["username"]
     password = json["password"]
-    ph = PasswordHasher
+    ph = PasswordHasher()
 
     query = ("SELECT password FROM Users "
              "WHERE Users.username = %s OR Users.email = %s")
@@ -177,7 +178,7 @@ def login():
     else:
         for hash in result:
             try:
-                ph.verify(ph, bytes(hash, encoding='utf-8'), bytes(password, encoding='utf-8'))
+                ph.verify(bytes(hash, encoding='utf-8'), bytes(password, encoding='utf-8'))
             except:
                 return "", 400
         return "", 200
