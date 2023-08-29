@@ -5,6 +5,7 @@ import mysql.connector
 from mysql.connector import Error
 from werkzeug.wrappers import Response
 from argon2 import PasswordHasher
+import time
 #must import specific exceptions
 import re
 
@@ -194,6 +195,19 @@ def verification(username, email, password):
     else:
         return 200
 
+def humanToUnix(seconds = 0, minutes = 0, hours = 0, days = 0, weeks = 0):
+    result = 0
+    if seconds != 0:
+        result += seconds
+    if minutes != 0:
+        result += (minutes * 60)
+    if hours != 0:
+        result += (hours * 3600)
+    if days != 0:
+        result += (days * 86400)
+    if weeks != 0:
+        result += (weeks * 604800)
+    return result
 
     
 
