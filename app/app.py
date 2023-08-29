@@ -126,8 +126,6 @@ def signup():
             duplicateEmail = False
             #have to iterate through result instead of cursor
             for (stored_username, stored_email) in result:
-                print(stored_username)
-                print(stored_email)
                 if stored_username == username:
                     duplicateUsername = True
                 if stored_email == email:
