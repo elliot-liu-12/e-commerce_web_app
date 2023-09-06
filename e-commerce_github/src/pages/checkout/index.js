@@ -10,7 +10,7 @@ var loadCount = 0;
 const Checkout = () =>
 {
     const password = "testing";
-    const stripePromise = loadStripe("[INSERT PUBLIC KEY HERE]");
+    const stripePromise = loadStripe("pk_test_51NczmlFYi6KCR1Fw7sBy7JpCBYDkgPOnoGsfLYFHIfpa1j0TI9sXrptHDXZsQgNLDzqW4ho2pULrWMSrzMqMNlem00JEI4XCfb");
 
     const [clientSecret, setClientSecret] = useState("");
 
