@@ -1,11 +1,13 @@
 import stripe
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 from werkzeug.wrappers import Response
 from argon2 import PasswordHasher
+import jwt
 import time
+from threading import Thread, ThreadError, Timer
 #must import specific exceptions
 import re
 
@@ -31,6 +33,8 @@ def create_connection(host_name, user_name, user_password):
 connection = create_connection("localhost", "root", "WdBy0ZM9Q7pk&WO82g9R$n0")
 cursor = connection.cursor()
 cursor.execute("USE {}".format("master_database"))
+#TODO: add saving from database
+token_blacklist = set()
 
 #use triple quotes for database communcation 
 def create_db():
@@ -47,10 +51,8 @@ def create_db_table():
     TABLES = {}
     #remember to include commas
     TABLES['Users'] = (
-        "CREATE TABLE `Users` ("
-        "`username` varchar(30) NOT NULL,"
-        "`email` varchar(70) NOT NULL,"
-        "`password` varchar(107) NOT NULL,"
+        "CREATE TABLE `Blacklist` ("
+        "`token` varchar(100) NOT NULL,"
         "`id` int(11) NOT NULL AUTO_INCREMENT,"
         "PRIMARY KEY (`id`)"
         ") ENGINE=InnoDB"
@@ -74,7 +76,7 @@ def procedures():
 procedures()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="http://localhost:3000", supports_credentials=True)
 #TODO: store this stuff in a config.py file 
     
 
@@ -84,8 +86,10 @@ def test():
 
 def answerPreflight(): 
     resp = Response("")
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    resp.headers["Access-Control-Allow-Headers"] = "content-type"
+    resp.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+    resp.headers["Access-Control-Allow-Headers"] = "content-type, Session-Token, Refresh-Token"
+    resp.headers["Access-Control-Allow-Credentials"] = "true"
+
     return resp
 
 @app.route("/secret", methods=["OPTIONS"])
@@ -158,6 +162,10 @@ def signup():
     else:
         return "", statusCode
 
+@app.route("/login", methods=["OPTIONS"])
+def login_preflight():
+    return answerPreflight()
+        
 @app.route("/login", methods=["POST"])
 def login():
     json = request.get_json()
@@ -165,7 +173,7 @@ def login():
     password = json["password"]
     ph = PasswordHasher()
 
-    query = ("SELECT password FROM Users "
+    query = ("SELECT username, password FROM Users "
              "WHERE Users.username = %s OR Users.email = %s")
 
     #must pass in a tuple, even if the query only needs one thing
@@ -175,13 +183,65 @@ def login():
     if result == None:
         return "", 400
     else:
-        for hash in result:
-            try:
-                ph.verify(bytes(hash, encoding='utf-8'), bytes(password, encoding='utf-8'))
-            except:
+        stored_username, hash = result
+        try:
+            ph.verify(bytes(hash, encoding='utf-8'), bytes(password, encoding='utf-8'))
+            #pass jwt with user information back to frontend (implement token invalidation for logout)
+            secret = "2T<~N>i$G8*?^Nys^K!~{Xuy[Yf<5U"
+            refresh_token_exp = int(time.time() + humanToUnix(hours=5))
+            user_data = {
+                "username" : stored_username,
+                "exp": int(time.time()) + humanToUnix(minutes=10)
+            }
+
+            token = jwt.encode(
+                key=secret,
+                payload=user_data,
+            )
+
+            refresh_data = {
+                "exp": refresh_token_exp
+            }
+            
+            refresh_token = jwt.encode(
+                key=secret,
+                payload=refresh_data
+            )
+            resp = make_response(token, 200)
+            #set cookie only works by default if the frontend and backend are running on the same domain
+            resp.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+            resp.set_cookie(key="refresh_token", domain="127.0.0.1", value=refresh_token, expires=refresh_token_exp, samesite="None",
+                httponly=True, secure=True)
+            # must have this to allow cookie to be saved
+            resp.headers["Access-Control-Allow-Credentials"] = "true"
+
+        except Exception as e:
+                print(e)
                 return "", 400
-        return "", 200
+        return resp
+
+@app.route("/signout", methods=["OPTIONS"])
+def signout_preflight():
+    return answerPreflight()
+
+@app.route("/signout", methods=["POST"])
+def signout():
+    accessToken = request.get_data()
+    token_blacklist.add(accessToken)
+
+    #removes the invalidated access token from the blacklist in 10 minutes, when it wil be expired anyway.
+    t = Timer(600, remove_blacklisted_token, args=(accessToken,))
+    t.start()
+
+    resp = make_response("", 200)
+    resp.set_cookie(key="refresh-token", domain="127.0.0.1", value="", expires=0, samesite="None",
+    httponly=True, secure=True)
+    return resp
+
     
+def remove_blacklisted_token(token):
+    token_blacklist.remove(token)
+ 
 def verification(username, email, password):
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
     if username == None or email == None or password == None:
