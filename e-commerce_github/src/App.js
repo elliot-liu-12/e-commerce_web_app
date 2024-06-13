@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import FrontPage from './pages/front/index';
 import ItemPage from './pages/item/index';
+import VariableItemPage from './pages/var-item/index';
 import Header from './global/header/index';
 import Checkout from './pages/checkout/index';
 import Login from './pages/login/index';
@@ -25,6 +26,7 @@ function App() {
         <Routes>
           <Route path='/' element={<FrontPage/>}/>
           <Route path='/item' element={<ItemPage />}/>
+          <Route path='/var-item' element={<VariableItemPage />}/>
           <Route path='/login' element={<Login setLoginState={setLoginState}/>}/>
           <Route path='/signup' element={<Signup />}/>
           <Route path='/account' isLoggedIn={isLoggedIn} setLoginState={setLoginState} element={<AccountPage />} />
