@@ -1,3 +1,4 @@
+import os
 import stripe
 from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
@@ -8,10 +9,12 @@ from argon2 import PasswordHasher
 import jwt
 import time
 from threading import Thread, ThreadError, Timer
+from dotenv import load_dotenv, dotenv_values
 #must import specific exceptions
 import re
 
-stripe.api_key="sk_test_51NczmlFYi6KCR1Fw2kaJejWCYJElrH0y3LnJvvkhNdwu3OdhxvAOARPcoaIyeTZxtAJKRTETlMgJVArrSfqrUY2S00YjTEOzh3"
+load_dotenv()
+stripe.api_key=os.getenv("API_KEY")
 # url for frontend: http://127.0.0.1:5000/
 # run command: python -m flask run
 # flask --app run --debug
@@ -76,7 +79,8 @@ def procedures():
 procedures()
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000", supports_credentials=True)
+origin = os.getenv("ORIGIN_URL")
+CORS(app, origins=origin, supports_credentials=True)
 #TODO: store this stuff in a config.py file 
     
 
@@ -86,7 +90,7 @@ def test():
 
 def answerPreflight(): 
     resp = Response("")
-    resp.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+    resp.headers["Access-Control-Allow-Origin"] = origin
     resp.headers["Access-Control-Allow-Headers"] = "content-type, Session-Token, Refresh-Token"
     resp.headers["Access-Control-Allow-Credentials"] = "true"
 
@@ -209,7 +213,7 @@ def login():
             )
             resp = make_response(token, 200)
             #set cookie only works by default if the frontend and backend are running on the same domain
-            resp.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+            resp.headers["Access-Control-Allow-Origin"] = origin
             resp.set_cookie(key="refresh_token", domain="127.0.0.1", value=refresh_token, expires=refresh_token_exp, samesite="None",
                 httponly=True, secure=True)
             # must have this to allow cookie to be saved
