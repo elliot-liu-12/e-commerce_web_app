@@ -7,9 +7,10 @@ import {
     useStripe,
     useElements
   } from "@stripe/react-stripe-js";
-
+import useCart from '../../global/hooks/useCart';
 const Form = () =>
 {
+    const { resetCart } = useCart();
     const handleSubmit = async () => {
 
         if(!stripe)
@@ -31,6 +32,7 @@ const Form = () =>
         }
         
         setIsLoading(false);
+        resetCart();
     }
     
     const paymentElementOptions = {

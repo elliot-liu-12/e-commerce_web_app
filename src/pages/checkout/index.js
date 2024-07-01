@@ -5,22 +5,24 @@ import { Box } from '@mui/material';
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import Form from "../form/index";
+import { useUIContext } from "../../global/context/index";
 
 var loadCount = 0;
 const Checkout = () =>
 {
     const password = "testing";
     const stripePromise = loadStripe("pk_test_51NczmlFYi6KCR1Fw7sBy7JpCBYDkgPOnoGsfLYFHIfpa1j0TI9sXrptHDXZsQgNLDzqW4ho2pULrWMSrzMqMNlem00JEI4XCfb");
-
+    const { cart } = useUIContext();
     const [clientSecret, setClientSecret] = useState("");
-
     useEffect(() => {
             //Gets the secret as soon as the page loads
             console.log("rendered");
             fetch("http://127.0.0.1:5000/secret", {
-            method: "GET",
-            headers: { "Content-Type": "application/json" }
-            })
+            method: "POST",
+            headers: { "Content-Type": "application/json"
+        },
+            body: JSON.stringify({ quantity : cart })
+            }) 
             .then((response) => response.json()) 
             .then((responseJSON) => { //must use exact field name
                 setClientSecret(responseJSON.client_secret)

@@ -1,19 +1,19 @@
 import * as React from 'react';
-import {Box} from '@mui/material';
-import {Button} from '@mui/material';
-import Card from '@mui/material/Card';
+import { Box, Button, Card } from '@mui/material';
 import CardMedia from '@mui/material/CardMedia';
 import CssBaseline from '@mui/material/CssBaseline';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import PlaceholderImage from '../../assets/placeholder.png';
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import useCart from '../../global/hooks/useCart';
 
 
 
 const ItemPage = () =>
 {
+    const { addToCart } = useCart();
     return (
         <Grid container>
             <CssBaseline />
@@ -35,7 +35,7 @@ const ItemPage = () =>
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris augue ante, 
                     euismod vel feugiat sed, ornare vel lectus. Vestibulum ante ipsum primis in faucibus
                     orci luctus et ultrices posuere cubilia curae.</Typography>
-                    <Button variant='contained' sx={{mt:'3%'}} component={Link} to="checkout">Checkout</Button>
+                    <Button variant='contained' sx={{mt:'3%'}} component={Link} onClick={() => addToCart(1)} to="checkout">Checkout</Button>
                     </Box>
             </Grid>
         </Grid>

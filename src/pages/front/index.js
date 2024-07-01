@@ -77,7 +77,10 @@ const FrontPage = () =>
                         </Typography>
                         </CardContent>
                         <CardActions>
-                            <Button size="small" component={Link} to="item">View</Button>
+                            <Button size="small" component={Link} to={ //every other item page is for var items
+                                (cards.indexOf(card) % 2) ? "var-item" : "item"}>
+                                    View
+                            </Button>
                         </CardActions>
                     </Card>
                     </Grid>

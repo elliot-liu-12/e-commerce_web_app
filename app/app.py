@@ -1,5 +1,6 @@
 import os
 import stripe
+import os
 from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 import mysql.connector
@@ -13,6 +14,7 @@ from dotenv import load_dotenv, dotenv_values
 #must import specific exceptions
 import re
 
+#get API key
 load_dotenv()
 stripe.api_key=os.getenv("API_KEY")
 # url for frontend: http://127.0.0.1:5000/
@@ -100,10 +102,17 @@ def answerPreflight():
 def secret_preflight():
     return answerPreflight()
 
-@app.route("/secret", methods=["GET"])
+@app.route("/secret", methods=["POST"])
 def secret():
+    #get item quantity
+    json = request.get_json()
+    print(json)
+    quantity = int(json["quantity"])
+    #account for over/underflow
+    if quantity < 1 or quantity > 100:
+        return "", 400
     intent = stripe.PaymentIntent.create(
-    amount=50,
+    amount=(50 * quantity) ,
     currency="usd",
     )
     
