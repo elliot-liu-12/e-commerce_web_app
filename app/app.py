@@ -6,7 +6,7 @@ from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 from werkzeug.wrappers import Response
-from argon2 import PasswordHasher
+from argon2 import PasswordHasher #install cffi version
 import jwt
 import time
 from threading import Thread, ThreadError, Timer
@@ -35,48 +35,82 @@ def create_connection(host_name, user_name, user_password):
 
     return connection
 
-connection = create_connection("localhost", "root", "WdBy0ZM9Q7pk&WO82g9R$n0")
+connection = create_connection("localhost", "root", "root")
 cursor = connection.cursor()
-cursor.execute("USE {}".format("master_database"))
+cursor.execute("USE {}".format("master"))
 #TODO: add saving from database
 token_blacklist = set()
-
-#use triple quotes for database communcation 
-def create_db():
-    #database is called "database".
+    
+def initialize_db():
     try:
-        #you cannot name your database "database"
         cursor.execute(
- "CREATE DATABASE {} DEFAULT CHARACTER SET 'utf8'".format("master_database"))
+ "CREATE DATABASE IF NOT EXISTS {} DEFAULT CHARACTER SET 'utf8'".format("master"))
         print("database created successfully!")
     except mysql.connector.Error as error:
         print(error)
-    
-def create_db_table():
     TABLES = {}
-    #remember to include commas
     TABLES['Users'] = (
-        "CREATE TABLE `Blacklist` ("
-        "`token` varchar(100) NOT NULL,"
-        "`id` int(11) NOT NULL AUTO_INCREMENT,"
-        "PRIMARY KEY (`id`)"
-        ") ENGINE=InnoDB"
+        """
+        CREATE TABLE IF NOT EXISTS Users (
+            user_id INT PRIMARY KEY AUTO_INCREMENT,
+            email VARCHAR(50) UNIQUE,
+            password_hash VARCHAR(30),
+            created_at TIMESTAMP
+        )
+        """
+    )
+    TABLES['Categories'] = (
+        """
+        CREATE TABLE IF NOT EXISTS Categories (
+        id INT PRIMARY KEY,
+        name VARCHAR(30) UNIQUE
+        )
+        """
+    )
+    TABLES['Products'] = (
+        """
+        CREATE TABLE IF NOT EXISTS Products (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(50) UNIQUE,
+            description TEXT,
+            category_id INT,
+            FOREIGN KEY (category_id) REFERENCES Categories(id)
+                ON DELETE CASCADE
+        )
+        """
+    )
+    TABLES['Orders'] = (
+        """
+        CREATE TABLE IF NOT EXISTS Orders (
+            order_id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT,
+            product_id INT,
+            status ENUM('Paid', 'Shipped', 'Delivered', 'Cancelled') DEFAULT 'Paid',
+            quantity INT NOT NULL,
+            ordered_at TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES Users(user_id)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE,
+            FOREIGN KEY (product_id) REFERENCES Products(id)
+                ON UPDATE CASCADE
+        )
+        """
     )
     for table_name in TABLES:
         try:
-            cursor.execute("USE {}".format("master_database"))
+            cursor.execute("USE {}".format("master"))
             table_description = TABLES[table_name]
             cursor.execute(table_description)
-            print("table created successfully!")
         except mysql.connector.Error as error:
             print(error)
 
 def delete_all():
-        cursor.execute("DELETE FROM master_database.users LIMIT 1000")
+        cursor.execute("DELETE FROM master.users LIMIT 1000")
     
 
-def procedures(): 
-    return None
+def procedures():
+    #initializes database on startup
+    initialize_db()
 
 procedures()
 
@@ -84,7 +118,7 @@ app = Flask(__name__)
 origin = os.getenv("ORIGIN_URL")
 CORS(app, origins=origin, supports_credentials=True)
 #TODO: store this stuff in a config.py file 
-    
+
 
 @app.route("/")
 def test():
