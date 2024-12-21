@@ -11,15 +11,11 @@ import jwt
 import time
 from threading import Thread, ThreadError, Timer
 from dotenv import load_dotenv, dotenv_values
-#must import specific exceptions
 import re
 
 #get API key
 load_dotenv()
 stripe.api_key=os.getenv("API_KEY")
-# url for frontend: http://127.0.0.1:5000/
-# run command: python -m flask run
-# flask --app run --debug
 
 def create_connection(host_name, user_name, user_password):
     connection = None
@@ -53,8 +49,9 @@ def initialize_db():
         """
         CREATE TABLE IF NOT EXISTS Users (
             user_id INT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(50) UNIQUE,
             email VARCHAR(50) UNIQUE,
-            password_hash VARCHAR(30),
+            password_hash VARCHAR(100),
             created_at TIMESTAMP
         )
         """
@@ -165,9 +162,8 @@ def signup():
     statusCode = verification(username, email, password)
     if statusCode == 200:
 
-        #TODO: Change to where exists for e f f i c i e n c y, use CASE 
         query = ("SELECT username, email FROM Users "
-                 "WHERE Users.username = %s OR Users.email = %s")
+                 "WHERE Users.username LIKE %s OR Users.email LIKE %s")
         
         cursor.execute(query, (username, email))
         result = cursor.fetchall()
@@ -194,12 +190,12 @@ def signup():
             ph = PasswordHasher()
             hash = ph.hash(password)
             ph.verify(hash, password)
-
+            print(hash)
             while ph.check_needs_rehash(hash):
                 hash = ph.hash(password)
 
             add_user = ("INSERT INTO Users "
-                         "(username, email, password)"
+                         "(username, email, password_hash)"
                          "VALUES (%s, %s, %s)")
             values = (username, email, hash)
 
@@ -220,8 +216,8 @@ def login():
     password = json["password"]
     ph = PasswordHasher()
 
-    query = ("SELECT username, password FROM Users "
-             "WHERE Users.username = %s OR Users.email = %s")
+    query = ("SELECT username, password_hash FROM Users "
+             "WHERE Users.username LIKE %s OR Users.email LIKE %s")
 
     #must pass in a tuple, even if the query only needs one thing
     cursor.execute(query, (username, username))
@@ -276,7 +272,6 @@ def signout():
     accessToken = request.get_data()
     token_blacklist.add(accessToken)
 
-    #removes the invalidated access token from the blacklist in 10 minutes, when it wil be expired anyway.
     t = Timer(600, remove_blacklisted_token, args=(accessToken,))
     t.start()
 
