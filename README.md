@@ -1,5 +1,5 @@
 # What is this?
-
+## Note: I have joined the SASE (Society of Asian Scientists and Engineers) web dev team. Check out my more recent work [here](https://github.com/ufsasewebmaster/UF-SASE-Website)! 
 This project is a full stack React app built around the Stripe API that implements an online storefront to demonstrate proficiency in web development and relational databases for potential employers. The frontend is built with MaterialUI, while the backend is built with Flask. The website will be updated periodically with new pages and features when I have spare time.
 
 # Key Features
